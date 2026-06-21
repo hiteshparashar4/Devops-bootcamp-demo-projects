@@ -2,8 +2,6 @@
 All notes from the lectures
 
 ## Demo Links
-
------
 ### IaaS
 https://github.com/hiteshparashar4/module-5-Cloud-IaaS
 -----
