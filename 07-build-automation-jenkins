@@ -1,0 +1,120 @@
+BUILD AUTOMATION & CI/CD W JENKINS
+
+let dedicated sever to execute tests and build images automatically
+
+Jenkins is buid automation tool that you install on dedicated server with UI
+- run tests
+- build artifacts
+- publish artifacts
+- deploy artifacts
+- send notifications
+integrates with other tools (Docker, Repos, Build tools, deployment servers ...) via plugins
+
+2 Roles for Jenkins 
+- admin
+    manages Jenkins
+    sets up cluster
+    installs plugins
+    backup data
+- user
+    create actual jobs to run workflows
+    
+Depdending on app, need to have different Tools installed and configured on Jenkins
+-> plugins (install then configure then add as step in job build)
+-> directly on server (more flexibility)
+
+/jobs -> where jobs stored in jenkins
+/workspace -> where git repos stored in jenkins when checked out in jobs
+
+Make Docker available in Jenkins -> attach volume to Jenkins from the host file (mount Docker runtime directory from host server into the container as a volume)
+
+Pipeline Job vs Freestyle Job (= pipeline is superset of freestyle jobs)
+-> Freestyle Job with 1 job/step (limited as config via UI not scripting/limited to input fields of Plugin: not suitable for complex workflows)
+-> Pipeline suitable for CI/CD, scripting - pipeline as code (exec steps in parallel, need user input, conditional statement, set variables, easier to manage and change over time)
+
+-> Pipeline script written in Groovy
+-> Best practice to have Pipeline script in Git repo
+
+Jenkinsfile syntax
+-> Create Jenkinsfile that runs script
+-> required fields:
+"pipeline" - top level
+"agent" - where to exec
+"stages" and "steps" - where scripts run
+    conditionals "when" "expression"
+"post" - exec some logic after all stages exec
+  conditionals "always" "success" "failure"
+"tools" - access build tools (supports maven, gradle, jdk)
+"parameters" (params.name) -> Build with parameters option in Jenkisn GUI
+    string(name, defaultValue, description)
+    choice(name, choices, description)
+    booleanParam(name, defaultValue, description)
+ "input" - prompts user for input
+    "message"
+    "ok"
+    "parameters"
+ 
+ENV
+check which vars available from Jenkins /env-vars.html
+ -> eg. env BRANCH_NAME available out of box ('dev' 'master' etc)
+can create own env vars 
+"environment" 
+interpolatation in groovy "this is my ${ENV_VAR}"
+
+Credentials
+1. Binds creds to env
+can define credentials in Jenkins GUI
+"credentials("credentialsId")" binds creds to env var
+need "Credentials Binding" Plugin 
+2. withCredentials([]) {}
+
+Using external Groovy scripts
+"script"
+load "script.groovy" into var
+call functions defined in groovy script using var.fn()
+all env vars available in Jenkinsfile are available in groovy script
+
+Replay option in Jenkins GUI allows to test different build scripts without comitting changes to git repo
+Can rerun a particular stage
+
+Multibranch Pipeline
+- need pipelines for all branches
+- need different behaviour based on branch
+- creates piepline for all branches that have Jenkinsfile
+
+Credentials in Jenkins
+- scopes: system (only available on Jenkins server), global (access everywhere), project (scope to project, onyl available for multibranch pipeline)
+- type (username w password, SSH, secret file etc.)
+
+Jenkins Shared Library (share logic across projects)
+- extension to pipeline
+- has own repo
+- reference shared logic in Jenkinsfile
+- can config in Jenkins to be shared globally or scoped to project (scope defined in Jenkinsfile)
+Folder structure of shared lib
+- vars folder - fn we call from Jenkinsfile, each its own groovy file
+- src folder - helper code
+- resources folder - external lib, non groovy files
+
+Trigger pipeline automatically when changes happen in git repo (or schedule or manually)
+-> git repo & Jenkins need to be configured for that
+-> for multibranch pipeline add plgin in Jenkins, define webhook token, create webhook endpoint and triggers in git SCM
+
+Versioning the app
+- each build tool or package manager keeps version
+- you decide how you version app
+- 3 parts of a version: <major>.<minor>.<patch>-<suffix> eg: v4.2.1-SNAPSHOT
+    major: big changes, not backwards-compatible
+    minor: new but backward-compatible changes, API changes
+    patch: minor changes and bug fixes, no change to API
+    suffix: provides more info
+- should increment automatically inside build automation
+- build tools have cmd to increment version
+    eg for maven: 
+    mvn build-helper:parse-version \ 
+    versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} versions:commit
+- to increment Docker image version, use app version, also need change in Dockerfile
+- clean packages after incrementing in Jenkins pipeline so that Dockerfile can build image with the correct jar file
+- to persist app versioning, need to commit git changes to the remote repo from Jenkins (will need to pull changes to local after to have up to date changes in remote repo)   
+- to avoid infinite loop (webhook push trigger <-> Jenkins pushing to git), need to identify git commits from Jenkins and ignore them when triggering automatic builds
+    can use plugin for this and configure 'ignore committer strategy'

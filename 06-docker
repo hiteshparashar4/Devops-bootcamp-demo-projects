@@ -1,0 +1,136 @@
+CONTAINERS WITH DOCKER
+
+container
+-> layers of images (mostly Linux Base Image, app image on top)
+-> way to package app with all necessary dependencies & config
+-> easily shared & moved around
+-> stored in container repo
+-> DockerHub is public repo for Docker
+-> own isolated environment packaged with all needed config
+-> one cmd to install the app
+
+Makes app deployment easier as no env config needed on server, except Docker runtime (devs & ops work together to package app in container)
+
+Docker Image is the actual package
+Docker Container is when actually start the app (running env for img)
+
+Virtual Machine virtualizes both app layer and OS Kernel layer
+Docker virtualizes app layer
+-> Docker img much smaller
+-> Docker containers start & run much faster
+-> VM of any OS can run on any OS host but not Docker container (workaround Docker Toolbox that abstracts away OS Kernal)
+
+Docker architecture
+- Docker Engine
+  - Docker Server
+    - Container Runtime
+    - Volumes
+    - Network
+    - build img
+  - Docker API
+  - Docker CLI
+
+Container has port binded to it, so can talk to app running inside
+has virtual file system
+
+Each img has a tag/version
+
+Useful cmd
+docker images -> list all images available
+docker pull <IMAGE> -> fetch image
+docker run <IMAGE> -> creates and start container in attached mode (pulls and starts container)
+docker run -d <IMAGE> -> start container in detached mode
+docker stop <CONTAINER_ID>
+docker start <CONTAINER_ID>
+docker ps -> list running containers
+docker ps -a -> list bith running and stopped containters
+
+Multiple containers can run on your host machine
+but laptop has only certain ports available
+-> need to bind ports
+docker run -p<HOST_PORT>:<CONTAINER_PORT> <IMAGE>
+
+Name containers
+docker run --name <NAME> <IMAGE>
+
+Debugging
+docker logs <CONTAINER_ID> 
+docker logs <CONTAINER_NAME>
+docker logs <CONTAINER_NAME> | tail (only show last logs)
+docker logs <CONTAINER_NAME> -f (stream logs) 
+
+Run terminal of container 
+docker exec -it <CONTAINER_ID> /bin/bash
+exit
+
+Enter Docker container as root user -> -u 0
+docker exec -u 0 -it <CONTAINER_ID> bash
+
+Docker Network
+-> creates isolated Docker Network where containers are running in (can talk to each other using just container name as they are in same network)
+-> provides networks by default
+-> docker network ls (check existing networks)
+-> docker network create <NAME> (create new network)
+-> pass network as option when running container with --net option
+
+Can passe env vars to container with -e option when running container 
+
+Docker Compose -> run multiple Docker containers
+-> map Docker cmd into a file
+-> takes care of creating a common Network (so no need to specify network in file)
+docker-compose -f <FILE_NAME> up
+docker-compose -f <FILE_NAME> down
+
+When you restart a container, all data is lost! 
+-> need for volumes to persist data
+
+Dockerfile -> blueprint for building images
+FROM (image based on)
+ENV
+RUN (executes linux cmd in container)
+COPY (runs on host)
+CMD (entry point cmd, so only one)
+-> docker build -t <IMG_NAME>:<VERSION_TAG> <FILE_LOCATION>
+when you adjust Docker file, need to rebuild image
+
+Delete container
+docker rm <CONTAINER_ID>
+Delete image
+docker rmi <IMAGE_ID>
+
+Docker repositories
+Can create repo on aws -> AWS ECR
+ECR allows only one img per repo (can store multiple version tags of same img in one repo)
+-> need to login to private repo
+docker login
+-> image naming in Docker repo: registryDomain/imageName:tag
+need to tag image to conform to naming format
+docker tag my-app:latest 395901524773.dkr.ecr.eu-central-1.amazonaws.com/my-app:latest
+-> push to repo
+docker push 395901524773.dkr.ecr.eu-central-1.amazonaws.com/my-app:1.0
+
+Docker Volumes
+-> persists data in Docker container
+-> folder in physical host file system is mounted into the virtual file system of Docker
+3 types volumes
+define during run cmd with -v option
+- host volume
+- anonymous volumes 
+- named volumes (reference volume by name)
+-> most used is named volumes 
+
+Best practices:
+- use official Docker images as Base image
+- fixate the version to avoid breaking app
+- use leaner & smaller operating system distributions (ex: alpine) if applicable
+- optimize caching image layers (order Dockerfile cmd from least to most frequently changing, since once a layer changes all following layers are re-created as well)
+- use .dockerignore to explicitly exclude files and folders
+- use "Multi-Stage Builds" to seperate dependencies needed for build and runtime -> specify AS build --from=build in Dockerfile
+- use least privileged user in container to run the app 
+USER <user>
+- scan your images for vulnerabilities
+docker login
+docker scan <IMAGE>
+
+
+

@@ -1,0 +1,63 @@
+Ansible
+-> tool to automate IT tasks
+
+Advantages:
+ 1. exec tasks from own machine
+ 2. config steps in single YAML file
+ 3. re-use same file multiple times
+ 4. more reliable
+
+Ansible is agentless -> only need to install on one machine
+is idempotent too
+
+Works w modules that get pushed to remote server, do their specific task, then removed
+Can use vars w Ansible
+
+Ansible Playbooks:
+  task = execution of module w arguments + description
+  tasks are executed in a sequence
+  Play = sequence of tasks with host (where task should be executed) and remote_user (which user should exec tasks) defined
+  Playbook = 1 or more Plays in single YAML file (can name Plays)
+  
+Values of hosts come from Ansible Inventory List, these hosts can be grouped
+Vars can also be defined at group level to avoid repeating info for multiple hosts in that group
+
+Ansible collection = packaging format for bundling and distributing Ansible content
+Ansible Galaxy = online hub for finding & sharing ansible community content
+for big ansible projects, can create own collection
+
+plugin = enhance module functionality
+
+ad-hoc cmd:
+  ansible all -i hosts -m ping
+  ansible <HOST_GROUP || HOST> -i hosts -m <MODULE>
+  ansible-playbook -i <HOSTS_FILE> <PLAYBOOK_YAML_FILE>
+  ansible-galaxy collection install <COLLECTION_NAME>
+  -vv (flag to display info about ansible config)
+  ansible-inventory -i <INVENTORY_FILE> --list (or --graph)
+
+host key checking is enabled by default on ansible -> if dealing with ephemeral servers, can be practical to disable host key checking via ansible config file
+for long term servers, not good practice to disable host key checking, so best to just do ssh setup once manually, following cmd can help:
+ ssh-keyscan -H <host_ip> >> ~/.ssh/known_hosts (adds host as checked)
+ ssh-copy-id root@<host_ip> (copies over default public key to host .ssh/authorized_keys file)
+ 
+Ansible modules normally return data which can be registered into a variable
+Vars can be set:
+ - directly inside each play with vars attribute
+ - via the CLI with -e flag
+ - from an external vars file using the vars_files attribute in each play that wants to access the vars
+ 
+ Best practice to use fully qualified names for ansible modules
+  eg: community.docker.docker_image
+  
+Best practice to create dedicated server to run ansible on
+  
+Using terraform provisioner or null_resource provider you can automate tf provisioning & ansible configuration  
+
+Can configure dynamic inventory list using inventory plugins (recommended) or scripts
+ - plugin needs to be enabled in ansible.cfg file
+ - plugin file name needs to end with name of the plugin 
+ - enable public DNS names so ansible can connect to servers from outside VPC
+ - can filter inventory & group inventory based on keys (eg. tags or instance types)
+ 
+Roles in ansible = packages for tasks that can easily be reused and maintained

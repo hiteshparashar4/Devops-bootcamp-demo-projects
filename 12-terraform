@@ -1,0 +1,79 @@
+Terraform -> automate & manage infrastructure
+declarative -> define end state
+
+advantages:
+- version control (history)
+- simple replication of infratructure possible
+- simple clean-up
+- easier team collaboration
+
+connects to platform provider using:
+  - core (tf-config + state inputs) -> compares actual vs desired state
+  - providers each giving access to ressources
+
+useful cmd:
+  refresh
+  plan
+  apply
+  destroy
+
+Providers
+  not included in Terraform download -> providers need to be installed 'terraform init'
+  good practice to define separate file providers.tf that contains all required providers config (specific versions etc)
+  provider gives access to api of certain technology (aws for ex) -> can interact with all provider resources
+  
+  resource -> create new resources
+  data -> query existing resources
+  
+  always apply terraform config file
+  
+variables
+  create vars in terraform.tfvars file
+  terraform apply -var-file <file>
+  use variables to replicate same infrastructure for different environments
+  can provide default values
+  can type vars
+  
+  can declare global env vars -> export TF_VAR_<var_name>="<value>"
+  then ref var in config file
+  
+provisioners
+  alternative to using user_data - which isn't in terraform's control as terraform initializes infra and then passes on user_data to be executed to provider after infra is initialized
+  provisioner executes cmd in terraform
+  provisioner "remote-exec" - exec script on remote resource after it is created
+  need connection attribute to connect provisioner to remote server
+  provisioner "file" - copy files or dir from local to newly created resource
+  provisioner "local-exec" - invokes local exec after resource is created
+  
+  provisioners NOT recommended by terraform - can lead to unexpected behavior, breaks idempotency concept -> best to use config mgmnt tools instead of "remote exec" (ex Ansible)
+  best to use local provider instead of "local-exec" provisioner
+  
+ modules
+  group resources that can be reused based on a logical unit
+  works with inputs (variables) and outputs (values)
+  dependent on providers 
+  
+  file structure with "root" module and child modules with each their own config
+  whenever module changed/added, need to run terraform init
+  
+ Remote State
+  terraform writes data to remote data store
+  benefits:
+    - share state among team
+    - backup for data
+    - keep sensitive data off disk
+  configured in terraform metadata in tf config using 'backend' attribute
+  need to run terraform init to connect to backend
+  
+  Best practices
+    - only change state using TF cmd
+    - set up remote storage backend for state file for team sharing
+    - use state locking to avoid concurrent edit conflicts
+    - backup state file - enable versioning 
+    - use 1 state per environment 
+    - host TF scripts in own git repo
+    - CI for TF code
+    - apply infra changes only through CD pipeline
+  
+ 
+  
